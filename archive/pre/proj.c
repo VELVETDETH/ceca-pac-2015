@@ -12,23 +12,29 @@ void wray(int np,int nr,int *line, float *weight, int *numb, float *snorm);
 float bpseudo(float* rec, int np, int nr, int* line, float* weight, int * numb, float* snorm);
 */
 
-void A(float *g,float *f) {
-    int line[IMGSIZE*2+10];
-    float weight[IMGSIZE*2+10];
-    int np,nr,i,numb;
-    for (i = 0; i<NPROJ*NRAY; ++i) g[i] = 0;
-    for (np = 0; np<NPROJ; ++np) {
-        for (nr = 0; nr<NRAY; ++nr) {
-            for (i = 0; i<IMGSIZE*2; ++i) {
-                line[i] = 0;
-                weight[i] = 0.;
-            }
-            wray(np,nr, line, weight,&numb);
-            for (i = 0; i<numb; ++i) {
-                g[np*NRAY+nr] += f[line[i]]*weight[i];
-            }
-        }
+void A(float *g, float *f) {
+  /**
+   * line: representation for generated edges of the 
+   * segmented images. Why it's IMGSIZE*2? 
+   */
+  int   np,nr,i,numb;
+  int   line[IMGSIZE*2+10];
+  float weight[IMGSIZE*2+10];
+  
+  for (i = 0; i<NPROJ*NRAY; ++i) 
+    g[i] = 0;
+  for (np = 0; np<NPROJ; ++np) {
+    for (nr = 0; nr<NRAY; ++nr) {
+      for (i = 0; i<IMGSIZE*2; ++i) {
+        line[i] = 0;
+        weight[i] = 0.;
+      }
+      wray(np,nr, line, weight,&numb);
+      for (i = 0; i<numb; ++i) {
+        g[np*NRAY+nr] += f[line[i]]*weight[i];
+      }
     }
+  }
 }
 
 void AStar(float *f,float *g) {
@@ -67,8 +73,6 @@ void posit(int np,int nr,float *ax,float *ay,float *mx,float *my) {
 void wray(int np,int nr,int *line, float *weight, int *numb) {
     float sorx, sory, cf, sf, rcosphi, tanphi, rtnphi, c, fp, w, yc;
     int ix, iy, incx, incy, index, next, flip, flipxy;
-    
-
 
     int idx,idx_;
     int idy;
@@ -174,45 +178,6 @@ void wray(int np,int nr,int *line, float *weight, int *numb) {
             incy = IMGSIZE;
         }
     }
-/*   if(iy==0){
-        iy=ix;ix=0;
-	float tmpt;
-	tmpt=tanphi;tanphi=rtnphi;rtnphi=tmpt;
-	int tmpinc;
-	tmpinc=incx;incx=incy;incy=tmpinc;
-	rcosphi = ( sqrt( 1 + tanphi* tanphi));
-
-    }
-   for(idx=0;idx<IMGSIZE;++idx){
-        fy=iy+(idx*tanphi);
-        idy=(int)fy;
-        if(idy+1>=IMGSIZE||idy<0) break;
-	l=fy-idy+tanphi-1;
-        if(l>0){
-	    tmpweight[idx][0]=rcosphi * (1 - l * rtnphi );
-	    tmpline[idx][0]  =idx*incx+idy*incy;
-	    tmpweight[idx][1]=rcosphi * ( l * rtnphi );
-	    tmpline[idx][1]  =idx*incx+(idy+1)*incy;
-	}
-	else{
-	    tmpweight[idx][0]=rcosphi;
-	    tmpline[idx][0]  =idx*incx+idy*incy;
-	    tmpweight[idx][1]=0;
-
-	}
-    }
-    for(idx_=0;idx_<idx;++idx_){
-	weight[*numb]=tmpweight[idx_][0];
-	line[*numb]  =tmpline[idx_][0];
-	++(*numb);
-	if(tmpweight[idx_][1]!=0){
-	    weight[*numb]=tmpweight[idx_][1];
-	    line[*numb]  =tmpline[idx_][1];
-	    ++(*numb);
-	}
-    }
-*/
-
 
     for(;;) {
         switch(next) {
@@ -257,21 +222,7 @@ void wray(int np,int nr,int *line, float *weight, int *numb) {
     }
 
 }
-/*
-float bpseudo(float* rec, int np, int nr, int* line, float* weight, int * numb, float* snorm) {
-    int i;
-    float sum = 0.0;
 
-    wray(np, nr, line, weight, numb);
-
-    if (*numb != 0) {
-        for (i = 0; i < *numb; ++i) {
-            sum += rec[line[i]] * weight[i];
-        }
-    }
-    return sum;
-}
-*/
 void pick(int* np, int* nr) {
     /*
     *np = rand()%NPROJ;

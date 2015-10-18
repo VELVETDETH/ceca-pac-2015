@@ -39,24 +39,24 @@ void write_file(float *img, const char *file_name) {
     fclose(fout);
 }
 
-void ini_const_m512(){
-
-    mIMGSIZE = _mm512_set1_epi32(IMGSIZE);
-    mNPROJ = _mm512_set1_epi32(NPROJ);
-    mNRAY = _mm512_set1_epi32(NRAY);
-    numi1 = _mm512_set1_epi32(1);
-    numi0 = _mm512_set1_epi32(0);
-    numiIMG2 = _mm512_set1_epi32(IMGSIZE*IMGSIZE);
-    numiIMG1 = _mm512_set1_epi32(IMGSIZE*IMGSIZE-1);
-    numiIMG = _mm512_set1_epi32(IMGSIZE);
-    numf4 = _mm512_set1_ps(4.0);
-    numf0 = _mm512_set1_ps(0.0);
-    numf255 = _mm512_set1_ps(255.0);
-    mPI = _mm512_set1_ps(PI);
-    mPIdivNP = _mm512_set1_ps(PI/NPROJ);
-    mALPHA = _mm512_set1_ps(ALPHA);
-    mBETA = _mm512_set1_ps(BETA);
-    mEPSILON = _mm512_set1_ps(EPSILON);
-
-
-}
+// void ini_const_m512(){
+// 
+//     mIMGSIZE = _mm512_set1_epi32(IMGSIZE);
+//     mNPROJ = _mm512_set1_epi32(NPROJ);
+//     mNRAY = _mm512_set1_epi32(NRAY);
+//     numi1 = _mm512_set1_epi32(1);
+//     numi0 = _mm512_set1_epi32(0);
+//     numiIMG2 = _mm512_set1_epi32(IMGSIZE*IMGSIZE);
+//     numiIMG1 = _mm512_set1_epi32(IMGSIZE*IMGSIZE-1);
+//     numiIMG = _mm512_set1_epi32(IMGSIZE);
+//     numf4 = _mm512_set1_ps(4.0);
+//     numf0 = _mm512_set1_ps(0.0);
+//     numf255 = _mm512_set1_ps(255.0);
+//     mPI = _mm512_set1_ps(PI);
+//     mPIdivNP = _mm512_set1_ps(PI/NPROJ);
+//     mALPHA = _mm512_set1_ps(ALPHA);
+//     mBETA = _mm512_set1_ps(BETA);
+//     mEPSILON = _mm512_set1_ps(EPSILON);
+// 
+// 
+// }
