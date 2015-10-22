@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "proto.h"
 
@@ -6,6 +7,10 @@ float sqr(float x) { return x*x; }
 
 void read_phantom(float *img, const char *file_name) {
     FILE *fin = fopen(file_name,"r");
+    if (!fin) {
+        fprintf(stderr, "Can't open file %s\n", file_name);
+        exit(1);
+    }
     int i;
     for (i = 0; i<IMGSIZE*IMGSIZE; ++i)
         fscanf(fin,"%f",img+i);
