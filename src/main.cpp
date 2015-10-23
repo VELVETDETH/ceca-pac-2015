@@ -10,6 +10,7 @@
 #include "utility.h"
 #include "proj.h"
 #include "msbeam.h"
+#include "image_toolbox.h"
 
 #define DEFAULT_NUM_THREADS 8
 
@@ -46,17 +47,21 @@ int main(int argc,char **argv) {
     }
 
     printf("Initializing memory ...\n");
-    float *g = (float *) malloc(sizeof(float) * (NPROJ*NRAY));
-    float *f = (float *) malloc(sizeof(float) * (IMGSIZE*IMGSIZE));
-    float *v = (float *) malloc(sizeof(float) * (IMGSIZE*IMGSIZE));
+    float *g = (float *) malloc(sizeof(float) * (NPROJ * NRAY));
+    float *f = (float *) malloc(sizeof(float) * (IMGSIZE * IMGSIZE));
+    float *v = (float *) malloc(sizeof(float) * (IMGSIZE * IMGSIZE));
+    float *r = (float *) malloc(sizeof(float) * (IMGSIZE * IMGSIZE));
 
     printf("NUMBER OF THREADS=%d\n",nthreads);
     omp_set_num_threads(nthreads);
 
     printf("Running read_phantom ...\n");
     read_phantom(f, data_file_name);
+    read_phantom(r, data_file_name); // just don't want to use memcpy
     
     normalize(f);
+    normalize(r);
+    
     write_file(f, "std.dat");
 
 	A(g, f);
@@ -78,13 +83,16 @@ int main(int argc,char **argv) {
 
     printf("\033[0;32mOK!\033[0;m\n");
     printf("Wall time elapsed %.3lf s\n", e_wtime - s_wtime);
-    
+
     normalize(f);
+
+    printf("Start to verify the result: \n");
+    double mssim = ImageToolbox::MSSIM(r, f, IMGSIZE, IMGSIZE);
+    printf("MSSIM: %.6lf\n", mssim);
     
     write_file(f, "img.dat");
-    
     write_file(v, "edge.dat");
-    
+
     return 0;
 }
 
