@@ -3,8 +3,6 @@
 
 #include "proto.h"
 
-float sqr(float x) { return x*x; }
-
 void read_phantom(float *img, const char *file_name) {
     FILE *fin = fopen(file_name,"r");
     if (!fin) {

@@ -16,4 +16,7 @@
 
 #define PI 3.14159265359
 
+#define MIDRAY 384
+#define MIDPIX 256
+
 #endif

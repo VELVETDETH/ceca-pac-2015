@@ -6,10 +6,17 @@
 #include "proj.h"
 #include "proto.h"
 #include "utility.h"
-#include "msbeam_cpu.h"
+#include "msbeam_offload_cpu.h"
 
-namespace MSBeamCpuHelper {
+namespace MSBeamOffloadCpuHelper {
+    /**
+     * In order to build this offload version, I've made following revision:
+     * 1. Abandoned the hand-written sqr() function, with simple macro. But 
+     * you should know that this will slow down the compiler a lot.
+     * 2. Moved wray to an individual file.
+     */
 
+    __attribute__((target(mic)))
     void min_image(float *f, float *v, float *g, int np, int nr, int *line, 
         float *weight, int numb, float snorm, float lambda) {
         
@@ -22,7 +29,6 @@ namespace MSBeamCpuHelper {
             Af += f[ind]*weight[i];
         }
         Af -= g[np*NRAY+nr];
-        
         /* calculate div (v^2 \grad f) and Af-g*/
         for (i = 0; i<numb; ++i) { 
             int ind = line[i];
@@ -60,8 +66,9 @@ namespace MSBeamCpuHelper {
         }
     }
 
-    void min_edge(float *f, float *v, int np, int nr, int *line, 
-        float *weight, int numb, float lambda) {
+    __attribute__((target(mic)))
+    void min_edge(float *f, float *v, int np, int nr, int *line, float *weight,
+        int numb, float lambda) {
         int i;
 
         float d[IMGSIZE*2+10];
@@ -101,9 +108,10 @@ namespace MSBeamCpuHelper {
         }
     }
 
+    __attribute__((target(mic)))
     void min_wrapper(float *f, float *v, float *g, int np, int nr, float lambda) {
-        int line[IMGSIZE*2+10];
-        float weight[IMGSIZE*2+10];
+        int* line = (int *) malloc(sizeof(int) * IMGSIZE * 2);
+        float* weight = (float *) malloc(sizeof(float) * IMGSIZE * 2);
         int numb;
         float snorm;
         
@@ -114,7 +122,7 @@ namespace MSBeamCpuHelper {
     }
 }
 
-void MSBeamCpu::msbeam(float *f, float *v, float *g, int num_thread) {
+void MSBeamOffloadCpu::msbeam(float *f, float *v, float *g, int num_thread) {
     int i,j,k;
     for (i = 0; i<IMGSIZE*IMGSIZE; ++i) {
         f[i] = 0.;
@@ -122,21 +130,31 @@ void MSBeamCpu::msbeam(float *f, float *v, float *g, int num_thread) {
     }
     printf("Image and edge data has been initialized.\n");
     
-    float lambda = 0.001;
-    
-    omp_set_num_threads(num_thread);
+    printf("Begin msbeam offload ...\n");
 
-    printf("Begin msbeam minimization ...\n");
-    for (i = 1; i<=ALL_ITER; ++i) {
-        printf("\033[0;31mIteration\033[0m %d ...\n", i);
-        printf("lambda = %f\n",lambda);
-        
-        #pragma omp parallel for private(j,k)
-        for (j = 0; j < NPROJ; ++j)
-            for (k = 0; k < NRAY; ++k) 
-                MSBeamCpuHelper::min_wrapper(f, v, g, j, k, lambda);
-        
-        lambda = lambda/(1 + 500 * lambda);
+    int f_size = IMGSIZE * IMGSIZE;
+    int g_size = NPROJ * NRAY;
+
+    #pragma offload target(mic:1) \
+        inout(f[0:f_size]) \
+        inout(g[0:g_size]) \
+        inout(v[0:f_size])
+    {
+        printf("On MIC...\n"); fflush(0);
+        float lambda = 0.001;
+        omp_set_num_threads(num_thread);
+        printf("Thread number: %d\n", omp_get_num_threads()); fflush(0);
+        for (int i = 1; i <= ALL_ITER; ++i) {
+            #pragma omp parallel for private(j,k)
+            for (j = 0; j < NPROJ; ++j)
+                for (k = 0; k < NRAY; ++k) {
+                    MSBeamOffloadCpuHelper::min_wrapper(f, v, g, j, k, lambda);
+                }
+            
+            lambda = lambda/(1 + 500 * lambda);
+        }
     }
+
+
     printf("msbeam minimization done.\n");
 }

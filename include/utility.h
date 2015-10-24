@@ -3,7 +3,7 @@
 
 #include "proto.h"
 
-float sqr(float x);
+#define sqr(x) ((x) * (x))
 
 void read_phantom(float *img, const char *file_name);
 

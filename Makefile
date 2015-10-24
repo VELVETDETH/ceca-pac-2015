@@ -5,21 +5,25 @@ BUILD=./build
 
 CC=icc
 CFLAGS=-O3
-LDFLAGS=-lrt -fopenmp
+LDFLAGS=-lrt -openmp
 CXX=icpc
 CXXFLAGS=-O3
 
-OBJECTS = $(BUILD)/main.o $(BUILD)/proj.o $(BUILD)/utility.o $(BUILD)/image_toolbox.o
+OBJECTS = $(BUILD)/main.o $(BUILD)/proj.o $(BUILD)/utility.o $(BUILD)/image_toolbox.o \
+					$(BUILD)/wray.o
+
 MSBEAM_CPU = $(BUILD)/msbeam_cpu.o
-MSBEAM_MIC = $(BUILD)/msbeam_mic.o
+MSBEAM_OFFLOAD_CPU = $(BUILD)/msbeam_offload_cpu.o
+MSBEAM = $(MSBEAM_CPU) $(MSBEAM_OFFLOAD_CPU)
 
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -I$(INCLUDE) -o $@
 
-cpu: $(OBJECTS) $(MSBEAM_CPU)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJECTS) $(MSBEAM_CPU) \
+$(BUILD)/msbeam: $(OBJECTS) $(MSBEAM)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJECTS) $(MSBEAM) \
 	-o $(BUILD)/msbeam -L$(BUILD)
 
-mic: $(OBJECTS) $(MSBEAM_MIC)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJECTS) $(MSBEAM_MIC) \
-	-o $(BUILD)/msbeam -L$(BUILD)
+msbeam: $(BUILD)/msbeam 
+
+clean:
+	rm -rf $(BUILD)/*

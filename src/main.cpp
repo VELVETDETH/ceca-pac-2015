@@ -9,7 +9,10 @@
 // self defined headers
 #include "utility.h"
 #include "proj.h"
+// This is the definition of all msbeam related class
 #include "msbeam.h"
+#include "msbeam_cpu.h"
+#include "msbeam_offload_cpu.h"
 #include "image_toolbox.h"
 
 #define DEFAULT_NUM_THREADS 8
@@ -23,7 +26,9 @@ int main(int argc,char **argv) {
     int nthreads;
     char c;
     char *data_file_name = NULL;
-    while ((c = getopt(argc, argv, "t:f:")) != -1) {
+    MSBeamBase *MSBeam = new MSBeamCpu;
+
+    while ((c = getopt(argc, argv, "t:f:m:")) != -1) {
         switch (c) {
             case 't':
                 nthreads = atoi(optarg);
@@ -31,6 +36,18 @@ int main(int argc,char **argv) {
             case 'f':
                 data_file_name = optarg;
                 break;
+            case 'm': 
+                if (!strcmp(optarg, "cpu")) {
+                    MSBeam = new MSBeamCpu;
+                    break;
+                } else if (!strcmp(optarg, "offload_cpu")) {
+                    MSBeam = new MSBeamOffloadCpu;
+                    break;
+                } else {
+                    fprintf(stderr, "Unrecognized version of MSBeam: %s\n", 
+                        optarg);
+                    exit(1);
+                }
             default:
                 fprintf(stderr, "Unrecognized option: %c\n", c);
                 exit(1);
@@ -53,7 +70,6 @@ int main(int argc,char **argv) {
     float *r = (float *) malloc(sizeof(float) * (IMGSIZE * IMGSIZE));
 
     printf("NUMBER OF THREADS=%d\n",nthreads);
-    omp_set_num_threads(nthreads);
 
     printf("Running read_phantom ...\n");
     read_phantom(f, data_file_name);
@@ -75,10 +91,12 @@ int main(int argc,char **argv) {
     }
     fclose(fout);
 
+    printf("Ready to calculate ...\n");
+
     // s_wtime: start wall time
     // e_wtime: end wall time
     double s_wtime = omp_get_wtime();
-    msbeam(f, v, g);
+    MSBeam->msbeam(f, v, g, nthreads);
     double e_wtime = omp_get_wtime();
 
     printf("\033[0;32mOK!\033[0;m\n");
