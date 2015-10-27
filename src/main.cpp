@@ -13,6 +13,7 @@
 #include "msbeam.h"
 #include "msbeam_cpu.h"
 #include "msbeam_offload_cpu.h"
+#include "msbeam_mic.h"
 #include "image_toolbox.h"
 
 #define DEFAULT_NUM_THREADS 8
@@ -43,7 +44,10 @@ int main(int argc,char **argv) {
                 } else if (!strcmp(optarg, "offload_cpu")) {
                     MSBeam = new MSBeamOffloadCpu;
                     break;
-                } else {
+                } else if (!strcmp(optarg, "mic")) {
+                    MSBeam = new MSBeamMic;
+                    break;
+                }else {
                     fprintf(stderr, "Unrecognized version of MSBeam: %s\n", 
                         optarg);
                     exit(1);

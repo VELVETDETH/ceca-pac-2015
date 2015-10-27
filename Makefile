@@ -14,7 +14,8 @@ OBJECTS = $(BUILD)/main.o $(BUILD)/proj.o $(BUILD)/utility.o $(BUILD)/image_tool
 
 MSBEAM_CPU = $(BUILD)/msbeam_cpu.o
 MSBEAM_OFFLOAD_CPU = $(BUILD)/msbeam_offload_cpu.o
-MSBEAM = $(MSBEAM_CPU) $(MSBEAM_OFFLOAD_CPU)
+MSBEAM_MIC = $(BUILD)/msbeam_mic.o
+MSBEAM = $(MSBEAM_CPU) $(MSBEAM_OFFLOAD_CPU) $(MSBEAM_MIC)
 
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -I$(INCLUDE) -o $@

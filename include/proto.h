@@ -4,6 +4,7 @@
 #define IMGSIZE 512
 #define NPROJ 180
 #define NRAY 768
+#define MAXPIX NRAY*3
 
 #define ALPHA 20
 #define BETA 0.35
