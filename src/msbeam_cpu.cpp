@@ -123,15 +123,13 @@ void MSBeamCpu::msbeam(float *f, float *v, float *g, int num_thread) {
     printf("Image and edge data has been initialized.\n");
     
     float lambda = 0.001;
-    
-    omp_set_num_threads(num_thread);
 
     printf("Begin msbeam minimization ...\n");
     for (i = 1; i<=ALL_ITER; ++i) {
         printf("\033[0;31mIteration\033[0m %d ...\n", i);
         printf("lambda = %f\n",lambda);
         
-        #pragma omp parallel for private(j,k)
+        #pragma omp parallel for private(j,k) num_threads(num_thread)
         for (j = 0; j < NPROJ; ++j)
             for (k = 0; k < NRAY; ++k) 
                 MSBeamCpuHelper::min_wrapper(f, v, g, j, k, lambda);

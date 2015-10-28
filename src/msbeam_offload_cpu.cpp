@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <omp.h>
 
 #include "wray.h"
@@ -109,9 +111,12 @@ namespace MSBeamOffloadCpuHelper {
     }
 
     __attribute__((target(mic)))
-    void min_wrapper(float *f, float *v, float *g, int np, int nr, float lambda) {
-        int* line = (int *) malloc(sizeof(int) * IMGSIZE * 2);
-        float* weight = (float *) malloc(sizeof(float) * IMGSIZE * 2);
+    void min_wrapper(float *f, float *v, float *g, int np, int nr, 
+        int *line, float *weight, float lambda) {
+       
+        memset(line, 0, sizeof(int) * IMGSIZE * 2);
+        memset(weight, 0, sizeof(float) * IMGSIZE * 2);
+
         int numb;
         float snorm;
         
@@ -135,24 +140,48 @@ void MSBeamOffloadCpu::msbeam(float *f, float *v, float *g, int num_thread) {
     int f_size = IMGSIZE * IMGSIZE;
     int g_size = NPROJ * NRAY;
 
-    #pragma offload target(mic:1) \
+    
+    #pragma offload target(mic) \
         inout(f[0:f_size]) \
         inout(g[0:g_size]) \
         inout(v[0:f_size])
     {
         printf("On MIC...\n"); fflush(0);
         float lambda = 0.001;
-        omp_set_num_threads(num_thread);
-        printf("Thread number: %d\n", omp_get_num_threads()); fflush(0);
+
+        int   **ls = (int**)   malloc(sizeof(int*)   * num_thread);
+        float **ws = (float**) malloc(sizeof(float*) * num_thread);
+        for (int i = 0; i < num_thread; i++) {
+            ls[i] = (int*)   malloc(sizeof(int)   * IMGSIZE * 2);
+            ws[i] = (float*) malloc(sizeof(float) * IMGSIZE * 2);
+        }
+
+        double s_wtime = omp_get_wtime();
         for (int i = 1; i <= ALL_ITER; ++i) {
-            #pragma omp parallel for private(j,k)
-            for (j = 0; j < NPROJ; ++j)
-                for (k = 0; k < NRAY; ++k) {
-                    MSBeamOffloadCpuHelper::min_wrapper(f, v, g, j, k, lambda);
-                }
+            printf("Iteration %d lambda: %.6f\n", i, lambda);
+            fflush(0);
+            #pragma omp parallel for private(j) num_threads(num_thread)
+            for (j = 0; j < NPROJ * NRAY; ++j) {
+                int tid = omp_get_thread_num();
+                int _j = j / NRAY;
+                int _k = j % NRAY;
+                MSBeamOffloadCpuHelper::min_wrapper(f, v, g, _j, _k, ls[tid], ws[tid], lambda);
+            }
             
             lambda = lambda/(1 + 500 * lambda);
+            fflush(0);
         }
+        double e_wtime = omp_get_wtime();
+        printf("Calculation wall time on MIC for each element: %.3lf us\n", 
+            (e_wtime - s_wtime)/(f_size * ALL_ITER) * 1e6);
+        fflush(0);
+
+        for (int i = 0; i < num_thread; i++) {
+            free(ls[i]);
+            free(ws[i]);
+        }
+        free(ls);
+        free(ws);
     }
 
 

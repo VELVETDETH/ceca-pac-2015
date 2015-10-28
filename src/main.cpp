@@ -5,6 +5,14 @@
 #include <omp.h>
 #include <time.h>
 #include <getopt.h>
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <string>
+
+using namespace cv;
+using namespace std;
 
 // self defined headers
 #include "utility.h"
@@ -13,6 +21,7 @@
 #include "msbeam.h"
 #include "msbeam_cpu.h"
 #include "msbeam_offload_cpu.h"
+#include "msbeam_mic.h"
 #include "image_toolbox.h"
 
 #define DEFAULT_NUM_THREADS 8
@@ -27,6 +36,7 @@ int main(int argc,char **argv) {
     char c;
     char *data_file_name = NULL;
     MSBeamBase *MSBeam = new MSBeamCpu;
+    string platform_name = "";
 
     while ((c = getopt(argc, argv, "t:f:m:")) != -1) {
         switch (c) {
@@ -38,12 +48,18 @@ int main(int argc,char **argv) {
                 break;
             case 'm': 
                 if (!strcmp(optarg, "cpu")) {
+                    platform_name = string("cpu");
                     MSBeam = new MSBeamCpu;
                     break;
                 } else if (!strcmp(optarg, "offload_cpu")) {
+                    platform_name = string("offload_cpu");
                     MSBeam = new MSBeamOffloadCpu;
                     break;
-                } else {
+                } else if (!strcmp(optarg, "mic")) {
+                    platform_name = string("mic");
+                    MSBeam = new MSBeamMic;
+                    break;
+                }else {
                     fprintf(stderr, "Unrecognized version of MSBeam: %s\n", 
                         optarg);
                     exit(1);
@@ -99,8 +115,9 @@ int main(int argc,char **argv) {
     MSBeam->msbeam(f, v, g, nthreads);
     double e_wtime = omp_get_wtime();
 
+    double elapsed = (e_wtime - s_wtime)/(IMGSIZE * IMGSIZE * ALL_ITER)*1e6;
     printf("\033[0;32mOK!\033[0;m\n");
-    printf("Wall time elapsed %.3lf s\n", e_wtime - s_wtime);
+    printf("Wall time elapsed %.3lf us\n", elapsed);
 
     normalize(f);
 
@@ -110,6 +127,30 @@ int main(int argc,char **argv) {
     
     write_file(f, "img.dat");
     write_file(v, "edge.dat");
+
+    // Out put the result images
+    uint8_t *f_std = (uint8_t *) malloc(sizeof(uint8_t) * IMGSIZE * IMGSIZE);
+    uint8_t *r_std = (uint8_t *) malloc(sizeof(uint8_t) * IMGSIZE * IMGSIZE);
+    for (int i = 0; i < IMGSIZE * IMGSIZE; i++) {
+        f_std[i] = (uint8_t) (f[i]);
+        r_std[i] = (uint8_t) (r[i]);
+    }
+
+    stringstream img_fname_ss;
+    img_fname_ss << platform_name << "f_image_" << nthreads << ".png";
+    cout << "image will be written at " << img_fname_ss.str() << endl;
+    Mat f_img(IMGSIZE, IMGSIZE, CV_8UC1, f_std);
+    Mat r_img(IMGSIZE, IMGSIZE, CV_8UC1, r_std);
+    imwrite(img_fname_ss.str(), f_img);
+
+    stringstream res_fname_ss;
+    res_fname_ss << platform_name <<  "msbeam_result.txt";
+    ofstream result_file(res_fname_ss.str().c_str(), ios::out | ios::app);
+    if (result_file.is_open()) {
+        result_file << elapsed << ", " << mssim << endl;
+    } else {
+        cerr << "can't write file " << res_fname_ss.str() << endl;
+    }
 
     return 0;
 }

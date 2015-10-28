@@ -4,9 +4,10 @@
 #define IMGSIZE 512
 #define NPROJ 180
 #define NRAY 768
+#define MAXPIX NRAY*3
 
 #define ALPHA 20
-#define BETA 0.35
+#define BETA 0.3
 #define EPSILON 0.001
 
 #define ALL_ITER 10
