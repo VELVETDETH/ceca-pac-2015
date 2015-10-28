@@ -140,7 +140,6 @@ void MSBeamOffloadCpu::msbeam(float *f, float *v, float *g, int num_thread) {
     int f_size = IMGSIZE * IMGSIZE;
     int g_size = NPROJ * NRAY;
 
-    
     #pragma offload target(mic) \
         inout(f[0:f_size]) \
         inout(g[0:g_size]) \

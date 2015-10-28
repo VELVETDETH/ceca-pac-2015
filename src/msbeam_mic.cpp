@@ -191,7 +191,6 @@ void MSBeamMic::msbeam(float *f, float *v, float *g, int num_thread) {
     memset(lap, 0, sizeof(float) * f_size);
     
     
-
     for (i = 0; i<IMGSIZE*IMGSIZE; ++i) {
         f[i] = 0.;
         v[i] = 0.;
@@ -208,7 +207,7 @@ void MSBeamMic::msbeam(float *f, float *v, float *g, int num_thread) {
         in(lap:    length(f_size) alloc_if(1) free_if(0)) 
     {}
 
-    
+    double s_wtime = omp_get_wtime();
     #pragma offload target(mic) \
         nocopy(f[0:f_size]) \
         nocopy(g[0:g_size]) \
@@ -258,7 +257,6 @@ void MSBeamMic::msbeam(float *f, float *v, float *g, int num_thread) {
     }
     
     printf("\033[0;32mOK!\033[0;m\n");
-    
 
     #pragma offload target(mic) \
         out(f: length(f_size) alloc_if(0) free_if(1)) \
